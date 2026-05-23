@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Raul Naupari</Authors>
+    <Version>2.1.0</Version>
+    <Company>Raul Naupari</Company>
+    <Description>Just another library to do aspect oriented programming</Description>
+    <Copyright />
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/csdevlib/Aop</PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <PackageTags />
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jal.Locator" Version="2.0.0" />
+  </ItemGroup>
+  
+</Project>

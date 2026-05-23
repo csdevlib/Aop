@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Raul Naupari</Authors>
+    <Version>2.4.0</Version>
+    <Company>Raul Naupari</Company>
+    <Description>LightInject extension for the BeyondNet.Aop.Aspects library</Description>
+    <Copyright />
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/csdevlib/Aop</PackageProjectUrl>
+    <RepositoryUrl></RepositoryUrl>
+    <PackageTags />
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jal.Locator.LightInject" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BeyondNet.Aop.Aspects\BeyondNet.Aop.Aspects.csproj" />
+    <ProjectReference Include="..\BeyondNet.Aop.LightInject\BeyondNet.Aop.LightInject.csproj" />
+  </ItemGroup>
+  
+</Project>
