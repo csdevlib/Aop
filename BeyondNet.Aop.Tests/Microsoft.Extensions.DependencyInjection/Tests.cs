@@ -1,109 +1,148 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using BeyondNet.Aop.Aspects.Installer;
-using Serilog;
+using BeyondNet.Aop.Aspects;
+using BeyondNet.Aop.Aspects.Logger.Serilog;
 using BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Installer;
 using Microsoft.Extensions.DependencyInjection;
-using BeyondNet.Aop.Aspects.Logger.Serilog;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Serilog;
+using Shouldly;
+using System;
 
 namespace BeyondNet.Aop.Tests.Microsoft.Extensions.DependencyInjection
 {
     [TestClass]
     public class Tests
     {
-
         [TestMethod]
         public void Proxy_WithOneAspect_ShoudBe()
         {
-            var container = new ServiceCollection();
-
-            container.AddSingleton<INumberProvider, NumberProvider>();
-
-            container.AddAop(c=>
-            {
-                c.AddAspect<Add>();
-            });
-
-            
-
-            var p = container.BuildServiceProvider();
-
-            var provider = p.GetService<INumberProvider>();
-
-            var test = new TestCases();
-
-            test.Proxy_WithOneAspect_ShoudBe(provider);
+            AssertWithProvider(
+                configure => configure.AddAspect<Add>(),
+                provider => new TestCases().Proxy_WithOneAspect_ShoudBe(provider));
         }
 
         [TestMethod]
         public void Proxy_WithMultipleAspect_ShoudBe()
         {
-            var container = new ServiceCollection();
-
-            container.AddSingleton<INumberProvider, NumberProvider>();
-
-            container.AddAop(c =>
-            {
-                c.AddAspect<Add10>();
-                c.AddAspect<Multiple5>();
-                c.AddAspect<Subtract20>();
-            });
-
-            
-
-            var p = container.BuildServiceProvider();
-
-            var provider = p.GetService<INumberProvider>();
-
-            var test = new TestCases();
-
-            test.Proxy_WithMultipleAspect_ShoudBe(provider);
+            AssertWithProvider(
+                configure =>
+                {
+                    configure.AddAspect<Add10>();
+                    configure.AddAspect<Multiple5>();
+                    configure.AddAspect<Subtract20>();
+                },
+                provider => new TestCases().Proxy_WithMultipleAspect_ShoudBe(provider));
         }
 
         [TestMethod]
         public void Proxy_WithAdviceAspect_ShoudBe()
         {
-            var container = new ServiceCollection();
-
-            container.AddSingleton<INumberProvider, NumberProvider>();
-
-            container.AddAop(action: c => { 
-                c.AddAdvice<AddAdvice>();
-            });
-
-            var p = container.BuildServiceProvider();
-
-            var provider = p.GetService<INumberProvider>();
-
-            var tests = new TestCases();
-
-            tests.Proxy_WithAdviceAspect_ShoudBe(provider);
+            AssertWithProvider(
+                configure => configure.AddAdvice<AddAdvice>(),
+                provider => new TestCases().Proxy_WithAdviceAspect_ShoudBe(provider));
         }
 
         [TestMethod]
         public void Proxy_WithLogAspect_ShoudBe()
         {
-            var container = new ServiceCollection();
+            AssertWithLogger(provider => new TestCases().Proxy_WithLogAspect_ShoudBe(provider));
+        }
 
-            container.AddSingleton<INumberProvider, NumberProvider>();
+        [TestMethod]
+        public void Proxy_WithLogAspectAndExpression_ShoudBe()
+        {
+            AssertWithLogger(provider => new TestCases().Proxy_WithLogAspectAndExpression_ShoudBe(provider));
+        }
 
-            container.AddAop(action: c =>
+        [TestMethod]
+        public void Proxy_WithLogAspectAndComplexExpression_ShoudBe()
+        {
+            AssertWithLogger(provider => new TestCases().Proxy_WithLogAspectAndComplexExpression_ShoudBe(provider));
+        }
+
+        [TestMethod]
+        public void Proxy_UsesScopedLifetime()
+        {
+            var services = ConfigureServices(configure => configure.AddAspect<Add>());
+
+            using var root = services.BuildServiceProvider(new ServiceProviderOptions
             {
-                c.AddLogger<SerilogLogger>();
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
+            using var firstScope = root.CreateScope();
+            using var secondScope = root.CreateScope();
+
+            var first = firstScope.ServiceProvider.GetRequiredService<INumberProvider>();
+            var repeated = firstScope.ServiceProvider.GetRequiredService<INumberProvider>();
+            var second = secondScope.ServiceProvider.GetRequiredService<INumberProvider>();
+
+            first.ShouldBeSameAs(repeated);
+            first.ShouldNotBeSameAs(second);
+        }
+
+        [TestMethod]
+        public void Proxy_DoesNotAllowSingletonLifetime()
+        {
+            var services = new ServiceCollection();
+
+            Should.Throw<ArgumentException>(() =>
+                services.AddAopProxy<INumberProvider, NumberProvider>(ServiceLifetime.Singleton));
+        }
+
+        [TestMethod]
+        public void Proxy_AllowsTransientLifetime()
+        {
+            var services = new ServiceCollection();
+
+            services.AddAop(configure => configure.AddAspect<Add>());
+            services.AddAopProxy<INumberProvider, NumberProvider>(ServiceLifetime.Transient);
+
+            using var root = services.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
             });
 
-            
+            var first = root.GetRequiredService<INumberProvider>();
+            var second = root.GetRequiredService<INumberProvider>();
 
+            first.ShouldNotBeSameAs(second);
+        }
+
+        private static void AssertWithLogger(Action<INumberProvider> assertion)
+        {
             Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}").MinimumLevel.Verbose()
-            .CreateLogger();
+                .WriteTo.Console()
+                .MinimumLevel.Verbose()
+                .CreateLogger();
 
-            var p = container.BuildServiceProvider();
+            AssertWithProvider(configure => configure.AddLogger<SerilogLogger>(), assertion);
+        }
 
-            var provider = p.GetService<INumberProvider>();
+        private static void AssertWithProvider(
+            Action<IAopAspectsBuilder> configure,
+            Action<INumberProvider> assertion)
+        {
+            var services = ConfigureServices(configure);
 
-            var tests = new TestCases();
+            using var root = services.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
+            using var scope = root.CreateScope();
 
-            tests.Proxy_WithLogAspect_ShoudBe(provider);
+            assertion(scope.ServiceProvider.GetRequiredService<INumberProvider>());
+        }
+
+        private static IServiceCollection ConfigureServices(Action<IAopAspectsBuilder> configure)
+        {
+            var services = new ServiceCollection();
+
+            services.AddAop(configure);
+            services.AddAopProxy<INumberProvider, NumberProvider>();
+
+            return services;
         }
     }
 }

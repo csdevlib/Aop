@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Jal.Locator;
 
 namespace BeyondNet.Aop
 {
@@ -10,11 +9,11 @@ namespace BeyondNet.Aop
 
         private readonly IPointCut _pointCut;
 
-        private readonly IServiceLocator _locator;
+        private readonly Func<Type, IAspect> _aspectFactory;
 
-        public AspectExecutor(Type[] types, IServiceLocator locator, IPointCut pointCut)
+        public AspectExecutor(Type[] types, Func<Type, IAspect> aspectFactory, IPointCut pointCut)
         {
-            _locator = locator;
+            _aspectFactory = aspectFactory;
             _pointCut = pointCut;
             _types = types;
         }
@@ -23,9 +22,9 @@ namespace BeyondNet.Aop
         {
             var typesToApply = _types.Where(x => _pointCut.CanApply(joinPoint, x));
 
-            if (typesToApply.Count() > 0)
+            if (typesToApply.Any())
             {
-                var aspectsToApply = typesToApply.Select(x => _locator.Resolve<IAspect>(x.FullName)).OrderBy(x => x.GetOrder(joinPoint)).ToArray();
+                var aspectsToApply = typesToApply.Select(_aspectFactory).OrderBy(x => x.GetOrder(joinPoint)).ToArray();
 
                 var root = aspectsToApply[0];
 

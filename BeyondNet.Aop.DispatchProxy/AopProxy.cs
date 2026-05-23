@@ -1,8 +1,11 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 
 namespace BeyondNet.Aop.DispatchProxy
 {
-    public class AopProxy<TService, TImplementation> : System.Reflection.DispatchProxy where TImplementation : TService
+    public class AopProxy<TService, TImplementation> : System.Reflection.DispatchProxy
+        where TService : class
+        where TImplementation : class, TService
     {
         private IAspectExecutor _executor;
 
@@ -10,7 +13,9 @@ namespace BeyondNet.Aop.DispatchProxy
 
         protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
-            var method = typeof(TImplementation).GetMethod(targetMethod.Name);
+            var method = typeof(TImplementation).GetMethod(
+                targetMethod.Name,
+                targetMethod.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
 
             var joinPoint = new JoinPoint
             {

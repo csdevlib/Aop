@@ -20,14 +20,14 @@ namespace BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Install
 
         public IAopAspectsBuilder AddAdvice<TImplementation>() where TImplementation : class, IAdvice
         {
-            _container.AddSingleton<IAdvice, TImplementation>();
+            _container.AddKeyedTransient<IAdvice, TImplementation>(typeof(TImplementation));
 
             return this;
         }
 
         public IAopAspectsBuilder AddLogger<TImplementation>() where TImplementation : class, ILogger
         {
-            _container.AddSingleton<ILogger, TImplementation>();
+            _container.AddKeyedTransient<ILogger, TImplementation>(typeof(TImplementation));
 
             return this;
         }
@@ -38,7 +38,7 @@ namespace BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Install
 
             Types.Add(type);
 
-            _container.AddTransient(typeof(IAspect), type);
+            _container.AddKeyedTransient(typeof(IAspect), type, type);
 
             return this;
         }

@@ -4,6 +4,19 @@ Just another library to do aspect oriented programming
 Derived from `raulnq/Jal.Aop`, licensed under Apache-2.0. The `BeyondNet.Aop`
 namespace and package family are maintained in this repository.
 
+## Platform support
+
+The solution targets .NET 10 LTS and runs on Windows and Linux. Install a .NET
+10 SDK and build or test from the repository root:
+
+```bash
+dotnet restore BeyondNet.Aop.sln
+dotnet test BeyondNet.Aop.sln --configuration Release --no-restore
+```
+
+Pull requests and changes to `main` are tested on both `ubuntu-latest` and
+`windows-latest`.
+
 ## How to use?
 Create your aspects
 ```csharp
@@ -113,69 +126,32 @@ public class NumberProvider : INumberProvider
     }
 }
 ```
-## Castle Windsor [![NuGet](https://img.shields.io/nuget/v/BeyondNet.Aop.Aspects.Installer.svg)](https://www.nuget.org/packages/BeyondNet.Aop.Aspects.Installer)
+## Microsoft.Extensions.DependencyInjection [![NuGet](https://img.shields.io/nuget/v/BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Installer.svg)](https://www.nuget.org/packages/BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Installer)
 
 ```csharp
- var container = new WindsorContainer();
+var services = new ServiceCollection();
 
- //should be declared before any registration in the container
-container.AddAop(c =>
+services.AddAop(c =>
 {
     c.AddAspect<Add10>();
     c.AddAspect<Multiple5>();
     c.AddAspect<Subtract20>();
 });
 
-container.Register(Component.For<INumberProvider>().ImplementedBy<NumberProvider>());
+// Scoped is the default and aligns with ASP.NET Core request services.
+services.AddAopProxy<INumberProvider, NumberProvider>();
 
-var provider = container.Resolve<INumberProvider>();
+using var root = services.BuildServiceProvider();
+using var scope = root.CreateScope();
+var provider = scope.ServiceProvider.GetRequiredService<INumberProvider>();
 
 var seed = 5;
 
 var value = provider.Get2(seed);
 ```
 
-## LightInject [![NuGet](https://img.shields.io/nuget/v/BeyondNet.Aop.LightInject.Aspect.Installer.svg)](https://www.nuget.org/packages/BeyondNet.Aop.LightInject.Aspect.Installer)
-
-```csharp
-var container = new ServiceContainer();
-
-container.Register<INumberProvider, NumberProvider>();
-
- //should be declared after all registrations in the container
-container.AddAop(c =>
-{
-    c.AddAspect<Add10>();
-    c.AddAspect<Multiple5>();
-    c.AddAspect<Subtract20>();
-});
-
-var provider = container.GetInstance<INumberProvider>();
-
-var seed = 5;
-
-var value = provider.Get2(seed);
-``` 
-
-## Microsoft.Extensions.DependencyInjection [![NuGet](https://img.shields.io/nuget/v/BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Installer.svg)](https://www.nuget.org/packages/BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Installer)
-
-```csharp
-var container = new ServiceCollection();
-
-container.AddSingleton<INumberProvider, NumberProvider>();
-
-container.AddAop(c =>
-{
-    c.AddAspect<Add10>();
-    c.AddAspect<Multiple5>();
-    c.AddAspect<Subtract20>();
-});
-
-var p = container.BuildServiceProvider();
-
-var provider = p.GetService<INumberProvider>();
-
-var seed = 5;
-
-var value = provider.Get2(seed);
-``` 
+Only `Microsoft.Extensions.DependencyInjection` is supported. Intercepted
+services are registered explicitly with `AddAopProxy`; the library does not
+scan the container or create a service locator. Use scoped or transient proxy
+lifetimes; singleton proxies are rejected because aspects may depend on
+request-scoped services.

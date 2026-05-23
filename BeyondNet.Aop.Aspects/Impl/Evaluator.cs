@@ -28,7 +28,7 @@ namespace BeyondNet.Aop.Aspects
 
                 return (TOutput)Convert.ChangeType(value, typeof(TOutput));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return errorvalue;
             }

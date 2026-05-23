@@ -4,6 +4,6 @@ namespace BeyondNet.Aop.Aspects
 {
     public interface IFactory<T>
     {
-        T Create(IJoinPoint joinPoint, Type type);
+        T Create(Type type);
     }
 }

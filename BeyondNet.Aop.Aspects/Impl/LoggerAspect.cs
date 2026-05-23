@@ -45,7 +45,7 @@ namespace BeyondNet.Aop.Aspects
                 throw new Exception("The type used in the property Type is not valid");
             }
 
-            _logger = _loggerFactory.Create(joinPoint, CurrentAttribute.Type);
+            _logger = _loggerFactory.Create(CurrentAttribute.Type);
 
             _stopWatch = new Stopwatch();
 

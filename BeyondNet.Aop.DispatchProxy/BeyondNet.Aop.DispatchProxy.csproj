@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Raul Naupari</Authors>
     <Company>Raul NaupariRaul Naupari</Company>
@@ -9,10 +9,6 @@
     <Description>Native proxy implementation for the BeyondNet.Aop library</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Reflection.DispatchProxy" Version="4.7.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BeyondNet.Aop\BeyondNet.Aop.csproj" />

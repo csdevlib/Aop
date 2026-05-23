@@ -1,20 +1,19 @@
 ﻿using System;
-using Jal.Locator;
 
 namespace BeyondNet.Aop.Aspects
 {
     public class Factory<T> : IFactory<T> where T : class
     {
-        private readonly IServiceLocator _serviceLocator;
+        private readonly Func<Type, T> _create;
 
-        public Factory(IServiceLocator serviceLocator)
+        public Factory(Func<Type, T> create)
         {
-            _serviceLocator = serviceLocator;
+            _create = create;
         }
 
-        public T Create(IJoinPoint joinPoint, Type type)
+        public T Create(Type type)
         {
-            return _serviceLocator.Resolve<T>(type.FullName);
+            return _create(type);
         }
     }
 }

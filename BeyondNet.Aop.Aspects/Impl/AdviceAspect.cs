@@ -27,7 +27,7 @@ namespace BeyondNet.Aop.Aspects
                 throw new Exception("The Type used is not valid");
             }
 
-            _advice = _factory.Create(joinPoint, CurrentAttribute.Type);
+            _advice = _factory.Create(CurrentAttribute.Type);
 
             HandleException = CurrentAttribute.HandleException;
         }

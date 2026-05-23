@@ -1,7 +1,5 @@
-﻿using BeyondNet.Aop.Aspects;
+using BeyondNet.Aop.Aspects;
 using BeyondNet.Aop.DispatchProxy;
-using Jal.Locator;
-using Jal.Locator.Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -11,69 +9,55 @@ namespace BeyondNet.Aop.Microsoft.Extensions.DependencyInjection.Aspects.Install
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddAop(this IServiceCollection servicecollection, Action<IAopAspectsBuilder> action = null, bool automaticInterception = true)
+        public static IServiceCollection AddAop(
+            this IServiceCollection services,
+            Action<IAopAspectsBuilder> configure = null)
         {
-            servicecollection.AddServiceLocator();
-
-            var types = new List<Type>();
-
-            var builder = new AopAspectsBuilder(servicecollection, types);
+            var builder = new AopAspectsBuilder(services, new List<Type>());
 
             builder.AddAspect<LoggerAspect>();
-
             builder.AddAspect<AdviceAspect>();
-
             builder.AddAspect<RetryAspect>();
+            builder.AddAdvice<Advice>();
 
-            if (action != null)
+            configure?.Invoke(builder);
+
+            services.AddSingleton<IPointCut, PointCut>();
+            services.AddTransient<IAspectExecutor>(provider => new AspectExecutor(
+                builder.Types.ToArray(),
+                type => provider.GetRequiredKeyedService<IAspect>(type),
+                provider.GetRequiredService<IPointCut>()));
+            services.AddTransient<IFactory<IAdvice>>(provider => new Factory<IAdvice>(
+                type => provider.GetRequiredKeyedService<IAdvice>(type)));
+            services.AddTransient<IFactory<ILogger>>(provider => new Factory<ILogger>(
+                type => provider.GetRequiredKeyedService<ILogger>(type)));
+            services.AddSingleton<IEvaluator, Evaluator>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddAopProxy<TService, TImplementation>(
+            this IServiceCollection services,
+            ServiceLifetime lifetime = ServiceLifetime.Scoped)
+            where TService : class
+            where TImplementation : class, TService
+        {
+            if (lifetime == ServiceLifetime.Singleton)
             {
-                action(builder);
+                throw new ArgumentException(
+                    "Singleton AOP proxies are not supported because aspects may depend on scoped services.",
+                    nameof(lifetime));
             }
 
-            servicecollection.AddSingleton<IPointCut, PointCut>();
+            services.Add(new ServiceDescriptor(typeof(TImplementation), typeof(TImplementation), lifetime));
+            services.Add(new ServiceDescriptor(
+                typeof(TService),
+                provider => AopProxyCreator.Create<TService, TImplementation>(
+                    provider.GetRequiredService<TImplementation>(),
+                    provider.GetRequiredService<IAspectExecutor>()),
+                lifetime));
 
-            servicecollection.AddSingleton<IAspectExecutor>(factory => new AspectExecutor(builder.Types.ToArray(), factory.GetService<IServiceLocator>(), factory.GetService<IPointCut>())); ;
-
-            servicecollection.AddSingleton<IFactory<IAdvice>, Factory<IAdvice>>();
-
-            servicecollection.AddSingleton<IFactory<ILogger>, Factory<ILogger>>();
-
-            servicecollection.AddSingleton<IEvaluator, Evaluator>();
-
-            servicecollection.AddSingleton<IAdvice, Advice>();
-
-            if(automaticInterception)
-            {
-                var descriptorstoproxy = new List<ServiceDescriptor>();
-
-                foreach (var descriptor in servicecollection)
-                {
-                    if (descriptor.ServiceType != null && descriptor.ImplementationType != null)
-                    {
-                        var methods = descriptor.ImplementationType.GetMethods();
-
-                        if (methods.Select(methodInfo => methodInfo.GetCustomAttributes(typeof(AbstractAspectAttribute), true)).Any(attributes => attributes.Length > 0))
-                        {
-                            descriptorstoproxy.Add(descriptor);
-                        }
-                    }
-                }
-
-                foreach (var descriptor in descriptorstoproxy)
-                {
-                    servicecollection.Remove(descriptor);
-
-                    var newservicedescriptor = ServiceDescriptor.Describe(descriptor.ImplementationType, descriptor.ImplementationType, descriptor.Lifetime);
-
-                    servicecollection.Add(newservicedescriptor);
-
-                    var proxyservicedescriptor = ServiceDescriptor.Describe(descriptor.ServiceType, x => AopProxyCreator.Create(descriptor.ServiceType, descriptor.ImplementationType, x.GetService(descriptor.ImplementationType), x.GetService<IAspectExecutor>()), descriptor.Lifetime);
-
-                    servicecollection.Add(proxyservicedescriptor);
-                }
-            }
-
-            return servicecollection;
+            return services;
         }
     }
 }
