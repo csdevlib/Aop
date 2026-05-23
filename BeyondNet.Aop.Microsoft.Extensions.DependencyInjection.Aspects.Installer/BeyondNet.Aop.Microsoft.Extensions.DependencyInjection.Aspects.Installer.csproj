@@ -3,9 +3,14 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.4.0</Version>
+    <Version>1.0.0</Version>
     <Authors>Raul Naupari</Authors>
+    <Company>BeyondNet</Company>
+    <Copyright>Copyright © 2024-2026 BeyondNet</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/csdevlib/Aop</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/csdevlib/Aop</RepositoryUrl>
+    <PackageTags>aop;aspect-oriented-programming;dependency-injection;dotnet;beyondnet</PackageTags>
     <Description>Microsoft.Extensions.DependencyInjection extension for the BeyondNet.Aop.Aspects library</Description>
   </PropertyGroup>
 
