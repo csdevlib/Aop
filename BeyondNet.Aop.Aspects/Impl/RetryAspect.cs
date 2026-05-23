@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 
 namespace BeyondNet.Aop.Aspects
@@ -8,7 +8,7 @@ namespace BeyondNet.Aop.Aspects
         public int Count { get; set; }
         protected override bool CanRetry(IJoinPoint joinPoint, Exception ex)
         {
-            var attribute = Get(joinPoint);
+            var attribute = GetAttribute(joinPoint);
 
             if (Count < attribute.MaxAttempts && (attribute.ExceptionType == null || attribute.ExceptionType == ex.GetType()))
             {

@@ -1,36 +1,44 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace BeyondNet.Aop.Aspects
 {
     public class Evaluator : IEvaluator
     {
-        public TOutput Evaluate<TOutput>(IJoinPoint joinPoint, string expression, TOutput errorvalue = default(TOutput))
+        private readonly ConcurrentDictionary<(MethodInfo, string), Delegate> _cachedDelegates = new ConcurrentDictionary<(MethodInfo, string), Delegate>();
+
+        public TOutput Evaluate<TOutput>(IJoinPoint joinPoint, string expression, TOutput errorValue = default(TOutput))
         {
             try
             {
-                var list = new List<ParameterExpression>();
+                var key = (joinPoint.MethodInfo, expression);
 
-                var infos = joinPoint.MethodInfo.GetParameters();
-
-                for (int i = 0; i < infos.Length; i++)
+                var compiledDelegate = _cachedDelegates.GetOrAdd(key, k =>
                 {
-                    var info = infos[i];
+                    var list = new List<ParameterExpression>();
+                    var infos = k.Item1.GetParameters();
 
-                    list.Add(Expression.Parameter(info.ParameterType, info.Name));
-                }
+                    for (int i = 0; i < infos.Length; i++)
+                    {
+                        var info = infos[i];
+                        list.Add(Expression.Parameter(info.ParameterType, info.Name));
+                    }
 
-                var lambda = DynamicExpressionParser.ParseLambda(list.ToArray(), null, expression);
+                    var lambda = DynamicExpressionParser.ParseLambda(list.ToArray(), null, k.Item2);
+                    return lambda.Compile();
+                });
 
-                var value = lambda.Compile().DynamicInvoke(joinPoint.Arguments);
+                var value = compiledDelegate.DynamicInvoke(joinPoint.Arguments);
 
                 return (TOutput)Convert.ChangeType(value, typeof(TOutput));
             }
             catch (Exception)
             {
-                return errorvalue;
+                return errorValue;
             }
         }
     }

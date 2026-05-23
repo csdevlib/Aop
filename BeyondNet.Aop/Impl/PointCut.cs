@@ -1,35 +1,45 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.Linq;
+using System.Reflection;
 
 namespace BeyondNet.Aop
 {
     public class PointCut : IPointCut
     {
+        private readonly ConcurrentDictionary<(MethodInfo, Type), bool> _cache = new ConcurrentDictionary<(MethodInfo, Type), bool>();
+
         public bool CanApply(IJoinPoint joinPoint, Type aspectType)
         {
-            if (aspectType.BaseType.IsGenericType)
+            return _cache.GetOrAdd((joinPoint.MethodInfo, aspectType), key =>
             {
-                var attibuteTypes = aspectType.BaseType.GetGenericArguments();
-                if (attibuteTypes.Length > 0)
+                var method = key.Item1;
+                var aspect = key.Item2;
+
+                if (aspect.BaseType != null && aspect.BaseType.IsGenericType)
                 {
-                    var attibuteType = attibuteTypes.FirstOrDefault(x => typeof(AbstractAspectAttribute).IsAssignableFrom(x));
-                    if (attibuteType != null)
+                    var attributeTypes = aspect.BaseType.GetGenericArguments();
+                    if (attributeTypes.Length > 0)
                     {
-                        var attributes = joinPoint.MethodInfo.GetCustomAttributes(attibuteType, true);
-                        return attributes.Length > 0;
+                        var attributeType = attributeTypes.FirstOrDefault(x => typeof(AbstractAspectAttribute).IsAssignableFrom(x));
+                        if (attributeType != null)
+                        {
+                            var attributes = method.GetCustomAttributes(attributeType, true);
+                            return attributes.Length > 0;
+                        }
+                        return false;
                     }
-                    return false;
+                    else
+                    {
+                        return false;
+                    }
+
                 }
                 else
                 {
-                    return false;
+                    return true;
                 }
-
-            }
-            else
-            {
-                return true;
-            }
+            });
         }
     }
 }

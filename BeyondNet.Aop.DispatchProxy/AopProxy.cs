@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 
 namespace BeyondNet.Aop.DispatchProxy
@@ -7,15 +8,17 @@ namespace BeyondNet.Aop.DispatchProxy
         where TService : class
         where TImplementation : class, TService
     {
+        private static readonly ConcurrentDictionary<MethodInfo, MethodInfo> _methodCache = new ConcurrentDictionary<MethodInfo, MethodInfo>();
+
         private IAspectExecutor _executor;
 
         private TService _target;
 
         protected override object Invoke(MethodInfo targetMethod, object[] args)
         {
-            var method = typeof(TImplementation).GetMethod(
-                targetMethod.Name,
-                targetMethod.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+            var method = _methodCache.GetOrAdd(targetMethod, tm => typeof(TImplementation).GetMethod(
+                tm.Name,
+                tm.GetParameters().Select(parameter => parameter.ParameterType).ToArray()));
 
             var joinPoint = new JoinPoint
             {
@@ -42,9 +45,9 @@ namespace BeyondNet.Aop.DispatchProxy
             return joinPoint.Return;
         }
 
-        public void Init(TService target, IAspectExecutor executer)
+        public void Init(TService target, IAspectExecutor executor)
         {
-            _executor = executer;
+            _executor = executor;
 
             _target = target;
         }

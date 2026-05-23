@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace BeyondNet.Aop
 {
@@ -15,40 +15,46 @@ namespace BeyondNet.Aop
         {
             OnEntry(joinPoint);
 
-            try
+            bool success = false;
+
+            while (true)
             {
-                if (Continue(joinPoint))
+                try
                 {
-                    if (GetNext() == null)
+                    if (Continue(joinPoint))
                     {
-                        joinPoint.Proceed();
+                        if (GetNext() == null)
+                        {
+                            joinPoint.Proceed();
+                        }
+                        else
+                        {
+                            GetNext().Apply(joinPoint);
+                        }
+                        OnSuccess(joinPoint);
+                        success = true;
+                        break;
                     }
-                    else
+                }
+                catch (Exception ex)
+                {
+                    if (!CanRetry(joinPoint, ex))
                     {
-                        GetNext().Apply(joinPoint);
+                        if (HandleException)
+                        {
+                            OnException(joinPoint, ex);
+                            success = true;
+                            break;
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
-                    OnSuccess(joinPoint);
                 }
             }
-            catch (Exception ex)
-            {
-                if (CanRetry(joinPoint, ex))
-                {
-                    Retry(joinPoint);
-                }
-                else
-                {
-                    if (HandleException)
-                    {
-                        OnException(joinPoint, ex);
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-            finally
+
+            if (success)
             {
                 OnExit(joinPoint);
             }

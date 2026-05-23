@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -37,12 +37,12 @@ namespace BeyondNet.Aop.Aspects
 
             if (CurrentAttribute.Type == null)
             {
-                throw new Exception("The Type should not be null");
+                throw new ArgumentNullException(nameof(CurrentAttribute.Type), "The Type should not be null");
             }
 
-            if (CurrentAttribute.Type != null && !typeof(ILogger).IsAssignableFrom(CurrentAttribute.Type))
+            if (!typeof(ILogger).IsAssignableFrom(CurrentAttribute.Type))
             {
-                throw new Exception("The type used in the property Type is not valid");
+                throw new ArgumentException("The type used in the property Type is not valid", nameof(CurrentAttribute.Type));
             }
 
             _logger = _loggerFactory.Create(CurrentAttribute.Type);
@@ -113,7 +113,7 @@ namespace BeyondNet.Aop.Aspects
         {
             _logger.OnException(joinPoint, _requestId, ex);
 
-            throw new Exception("Exception logged by the LogAspect", ex);
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
         }
     }
 }

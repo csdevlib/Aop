@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace BeyondNet.Aop
 {
@@ -10,7 +10,7 @@ namespace BeyondNet.Aop
 
         public override void Apply(IJoinPoint joinPoint)
         {
-            CurrentAttribute = Get(joinPoint);
+            CurrentAttribute = GetAttribute(joinPoint);
 
             Init(joinPoint);
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace BeyondNet.Aop.Aspects
 {
@@ -19,12 +19,12 @@ namespace BeyondNet.Aop.Aspects
         {
             if(CurrentAttribute.Type == null)
             {
-                throw new Exception("The Type should not be null");
+                throw new ArgumentNullException(nameof(CurrentAttribute.Type), "The Type should not be null");
             }
 
-            if (CurrentAttribute.Type != null && !typeof(IAdvice).IsAssignableFrom(CurrentAttribute.Type))
+            if (!typeof(IAdvice).IsAssignableFrom(CurrentAttribute.Type))
             {
-                throw new Exception("The Type used is not valid");
+                throw new ArgumentException("The Type used is not valid", nameof(CurrentAttribute.Type));
             }
 
             _advice = _factory.Create(CurrentAttribute.Type);

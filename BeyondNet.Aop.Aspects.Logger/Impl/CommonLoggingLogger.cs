@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Text;
 using Common.Logging;
 
 namespace BeyondNet.Aop.Aspects.Logger
@@ -32,13 +33,13 @@ namespace BeyondNet.Aop.Aspects.Logger
             _serializer = serializer;
         }
 
-        public void OnExit(IJoinPoint joinpoint, Return @return, string requestid, long duration)
+        public void OnExit(IJoinPoint joinPoint, Return @return, string requestId, long duration)
         {
-            var returnvalue = string.Empty;
+            var returnValue = string.Empty;
 
             var template = OnExitTemplateWithDurationAndReturn;
 
-            if (!string.IsNullOrWhiteSpace(requestid))
+            if (!string.IsNullOrWhiteSpace(requestId))
             {
                 template = OnExitTemplateWithRequestIdAndDurationAndReturn;
             }
@@ -49,34 +50,31 @@ namespace BeyondNet.Aop.Aspects.Logger
             {
                 var s = string.Format("{0} = {1}", @return.Type, value);
 
-                returnvalue = string.Format("{0}, {1}", s, returnvalue);
+                returnValue = string.Format("{0}, {1}", s, returnValue);
             }
 
-            if (string.IsNullOrWhiteSpace(returnvalue))
+            if (string.IsNullOrWhiteSpace(returnValue))
             {
-                returnvalue = "None";
+                returnValue = "None";
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{took}", duration.ToString());
+            builder.Replace("{return}", returnValue);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{took}", duration.ToString());
-
-            message = message.Replace("{return}", returnvalue);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Debug(message);
+            _log.Debug(builder.ToString());
         }
 
-        public void OnEntry(IJoinPoint joinpoint, Argument[] arguments, string requestid)
+        public void OnEntry(IJoinPoint joinPoint, Argument[] arguments, string requestId)
         {
             var parameters = string.Empty;
 
             var template = OnEntryTemplateAndArguments;
 
-            if(!string.IsNullOrWhiteSpace(requestid))
+            if(!string.IsNullOrWhiteSpace(requestId))
             {
                 template = OnEntryTemplateWithRequestIdAndArguments;
             }
@@ -102,66 +100,60 @@ namespace BeyondNet.Aop.Aspects.Logger
                 parameters = "None";
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{arguments}", parameters);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{arguments}", parameters);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Debug(message);
+            _log.Debug(builder.ToString());
         }
 
-        public void OnException(IJoinPoint joinpoint, string requestid, Exception ex)
+        public void OnException(IJoinPoint joinPoint, string requestId, Exception ex)
         {
             var template = OnExceptionTemplate;
 
-            if (!string.IsNullOrWhiteSpace(requestid))
+            if (!string.IsNullOrWhiteSpace(requestId))
             {
                 template = OnExceptionTemplateWithRequestId;
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Error(message, ex);
+            _log.Error(builder.ToString(), ex);
         }
 
-        public void OnExit(IJoinPoint joinpoint, string requestid, long duration)
+        public void OnExit(IJoinPoint joinPoint, string requestId, long duration)
         {
-            var returnvalue = "None";
+            var returnValue = "None";
 
             var template = OnExitTemplateWithDurationAndReturn;
 
-            if (!string.IsNullOrEmpty(requestid))
+            if (!string.IsNullOrEmpty(requestId))
             {
                 template = OnExitTemplateWithRequestIdAndDurationAndReturn;
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{took}", duration.ToString());
+            builder.Replace("{return}", returnValue);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{took}", duration.ToString());
-
-            message = message.Replace("{return}", returnvalue);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Debug(message);
+            _log.Debug(builder.ToString());
         }
 
-        public void OnExit(IJoinPoint joinpoint, Return @return, string requestid)
+        public void OnExit(IJoinPoint joinPoint, Return @return, string requestId)
         {
-            var returnvalue = string.Empty;
+            var returnValue = string.Empty;
 
             var template = OnExitTemplateWithReturn;
 
-            if (!string.IsNullOrWhiteSpace(requestid))
+            if (!string.IsNullOrWhiteSpace(requestId))
             {
                 template = OnExitTemplateWithRequestIdAndReturn;
             }
@@ -172,45 +164,41 @@ namespace BeyondNet.Aop.Aspects.Logger
             {
                 var s = string.Format("{0} = {1}", @return.Type, value);
 
-                returnvalue = string.Format("{0}, {1}", s, returnvalue);
+                returnValue = string.Format("{0}, {1}", s, returnValue);
             }
 
-            if (string.IsNullOrWhiteSpace(returnvalue))
+            if (string.IsNullOrWhiteSpace(returnValue))
             {
-                returnvalue = "None";
+                returnValue = "None";
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{return}", returnValue);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{return}", returnvalue);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Debug(message);
+            _log.Debug(builder.ToString());
         }
 
-        public void OnExit(IJoinPoint joinpoint, string requestid)
+        public void OnExit(IJoinPoint joinPoint, string requestId)
         {
-            var returnvalue = "None";
+            var returnValue = "None";
 
             var template = OnExitTemplateWithReturn;
 
-            if(!string.IsNullOrEmpty(requestid))
+            if(!string.IsNullOrEmpty(requestId))
             {
                 template = OnExitTemplateWithRequestIdAndReturn;
             }
 
-            var message = template.Replace("{class}", joinpoint.TargetType.Name);
+            var builder = new StringBuilder(template);
+            builder.Replace("{class}", joinPoint.TargetType.Name);
+            builder.Replace("{method}", joinPoint.MethodInfo.Name);
+            builder.Replace("{return}", returnValue);
+            builder.Replace("{requestid}", requestId);
 
-            message = message.Replace("{method}", joinpoint.MethodInfo.Name);
-
-            message = message.Replace("{return}", returnvalue);
-
-            message = message.Replace("{requestid}", requestid);
-
-            _log.Debug(message);
+            _log.Debug(builder.ToString());
         }
     }
 }
